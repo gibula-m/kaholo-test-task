@@ -6,6 +6,7 @@ import { Logger } from "./utility/logger";
 import { ExecuteShellDTO } from "./module/shell.dto";
 import { requestBodyValidator } from "./filter/validator";
 import bodyParser from "body-parser";
+import { IError } from "./utility/type";
 
 const logger = new Logger("MainApplication");
 
@@ -21,7 +22,12 @@ app.post(
 );
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  res.status(500).send(err.message);
+  const response: IError = {
+    ts: Date.now().toString(),
+    statusCode: 500,
+    message: err.message,
+  };
+  res.status(response.statusCode).send(response);
 });
 
 app.listen(appConfig.PORT, () => {
