@@ -1,9 +1,23 @@
 import { spawn } from "child_process";
+import CommandHistoryRepository from "../database/command-history/repository";
+
+const repository = new CommandHistoryRepository();
 
 export const runCommand = async (command: string): Promise<string[]> => {
+  //PROCESS
   const parts = command.split(" ");
   const base = parts.shift();
-  return (await asyncSpawn(base!, parts)).split("\n");
+  try {
+    const result = await asyncSpawn(base!, parts);
+    //SAVE TO HISTORY
+    await repository.create(command, result);
+    //RETURN
+    return result.split("\n");
+  } catch (e: any) {
+    //SAVE TO HISTORY
+    await repository.create(command, e.message, false);
+    throw e;
+  }
 };
 
 const asyncSpawn = (

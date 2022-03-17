@@ -4,9 +4,10 @@ import { config } from "./config/application.config";
 import { executeShellCommand } from "./module/shell.controller";
 import { Logger } from "./utility/logger";
 import { ExecuteShellDTO } from "./module/shell.dto";
-import { requestBodyValidator } from "./filter/validator";
 import bodyParser from "body-parser";
 import { IError } from "./utility/type";
+import { connectToDatabase } from "./database/client";
+import { makeValidateBody } from "express-class-validator";
 
 const logger = new Logger("MainApplication");
 
@@ -15,11 +16,7 @@ app.use(bodyParser.json());
 
 const appConfig = config();
 
-app.post(
-  "/execute",
-  requestBodyValidator(ExecuteShellDTO),
-  executeShellCommand
-);
+app.post("/execute", makeValidateBody(ExecuteShellDTO), executeShellCommand);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   const response: IError = {
@@ -30,6 +27,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(response.statusCode).send(response);
 });
 
-app.listen(appConfig.PORT, () => {
-  logger.info(`The application is listening on port ${appConfig.PORT}!`);
+connectToDatabase(() => {
+  app.listen(appConfig.PORT, () => {
+    logger.info(`The application is listening on port ${appConfig.PORT}!`);
+  });
 });

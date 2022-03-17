@@ -7,9 +7,9 @@ export const executeShellCommand = async (
   res: Response,
   next: NextFunction
 ) => {
-  const command = req.body.shellCommand;
+  const command = req.body.shellCommand as string;
   try {
-    const result = await runCommand(command);
+    const result = await runCommand(command.trim());
     const response: ExecuteShellResponse = {
       result,
     };
