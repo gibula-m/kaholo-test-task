@@ -1,14 +1,11 @@
-import { spawn } from "child_process";
+import { exec, spawn } from "child_process";
 import CommandHistoryRepository from "../database/command-history/repository";
 
 const repository = new CommandHistoryRepository();
 
 export const runCommand = async (command: string): Promise<string[]> => {
-  //PROCESS
-  const parts = command.split(" ");
-  const base = parts.shift();
   try {
-    const result = await asyncSpawn(base!, parts);
+    const result = await asyncSpawn(command);
     //SAVE TO HISTORY
     await repository.create(command, result);
     //RETURN
@@ -20,23 +17,17 @@ export const runCommand = async (command: string): Promise<string[]> => {
   }
 };
 
-const asyncSpawn = (
-  command: string,
-  options: Array<string>
-): Promise<string> => {
+const asyncSpawn = (command: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const commandExecution = spawn(command, options);
-    commandExecution.stdout.on("data", (data: Buffer) => {
-      resolve(data.toString());
-    });
-    commandExecution.stderr.on("data", (data: Buffer) => {
-      reject(new Error(data.toString()));
-    });
-    commandExecution.on("error", (err: Error) => {
-      reject(err);
-    });
-    commandExecution.on("close", () => {
-      resolve("true");
+    //spawn changed to exec because of light commands used here
+    exec(command, (error: any, stdout: any, stderr: any) => {
+      if (error) {
+        reject(error);
+      } else if (stderr) {
+        reject(stderr);
+      } else {
+        resolve(stdout);
+      }
     });
   });
 };
